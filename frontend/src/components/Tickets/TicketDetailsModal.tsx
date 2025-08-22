@@ -148,14 +148,33 @@ export function TicketDetailsModal({ ticket, onClose, onTicketUpdate }: TicketDe
         if (log.action === 'status_updated' || log.action === 'ticket_updated') {
           const lines: string[] = [];
           
-          if (parsedData.resolution) {
-            const resolutionPoints = parsedData.resolution
-              .split(/(?:\r?\n|\. )/)
-              .filter((line: string) => line.trim() !== '');
-            resolutionPoints.forEach((line: string, idx: number) => {
-              lines.push(`${idx + 1}. ${line.trim()}`);
-            });
-          }
+              if (parsedData.resolution) {
+  const points = parsedData.resolution
+    .replace(/\r\n/g, '\n')
+    .split(/\n+/)
+    .map((line: string) => line.trim())
+    .filter(Boolean)
+    .map((line: string) =>
+      line.replace(/^\s*(?:\d+\.\s*|\(\d+\)\s*|[a-z]\)\s*|[-*•]\s*)/, '').trim()
+    );
+
+  let closingWish = "";
+
+  // detect last line if it's a closing wish (like Thank you, Regards, etc.)
+  const lastLine = points[points.length - 1];
+  if (/^(thank\s*you\.?|best\s*regards\.?|regards\.?|warm\s*wishes\.?)$/i.test(lastLine)) {
+    closingWish = points.pop(); // remove from points so it won't be numbered
+  }
+
+  points.forEach((line: any, idx: number) => {
+    lines.push(`${idx + 1}. ${line}`);
+  });
+
+  if (closingWish) {
+    lines.push(`\n🌸 ${closingWish}`);
+  }
+}
+
 
           if (parsedData.status) {
             lines.push(`Status: ${parsedData.status}`);
